@@ -13,11 +13,6 @@ add(Index, Filename, Bin ) when is_binary(Bin)  ->
 	{ ok, Index2 } = index(Index,Filename,0,length(Tokens),Tokens),
 	Index2.
 	
-%tokenize(Bin) ->
-%	Tokens = string:tokens(binary:bin_to_list(Bin)," <>.,!?-()[]{}:\";~\n\t\"+-*/\\"),
-%	io:format("~p~n", [ Tokens ]),
-%	{ ok, lists:map( fun(T) -> list_to_atom(T) end, Tokens  )}.		
-
 tokenize(Bin) ->
 	tokenize(0,[],nil, binary:bin_to_list(Bin)).
 
@@ -30,16 +25,14 @@ tokenize(N, Tokens, W, [C|Letters]) ->
 		{ nil, true } -> 
 			tokenize(N+1, Tokens, nil, Letters);
 		{ {Q,Cs}, true } ->
-			tokenize(N+1, [ {Q, list_to_atom(lists:reverse(Cs))} | Tokens ], nil, Letters);
+			tokenize(N+1, [{Q, list_to_atom(lists:reverse(Cs))}|Tokens], nil, Letters);
 		{ nil, false } ->
 			tokenize(N+1, Tokens, { N, [C] }, Letters);
 		{ {Q,Cs}, false } ->
-			tokenize(N+1, Tokens, { Q, [ C|Cs ] }, Letters)
+			tokenize(N+1, Tokens, { Q, [C|Cs] }, Letters)
 	end.
 			
-
 index(Index,_Filename,_N, _L, []) ->
-	io:format("~p~n", [ Index ]),
 	{ ok, Index };
 
 index(Index,Filename,N,L,[{Q,W}|Tokens]) ->
