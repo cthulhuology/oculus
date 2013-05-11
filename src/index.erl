@@ -6,8 +6,10 @@ new() ->
 	ets:new(search_index, [set]).
 
 get(Index, Url) when is_list(Url) ->
-	{ok, "200", _Headers, Body } = ibrowse:send_req(Url,[],get),
-	add(Index, Url, Body).
+	case ibrowse:send_req(Url,[],get) of
+		{ok, "200", _Headers, Body } -> add(Index, Url, Body);
+		{ok, _, _Headers, _Body } -> true
+	end.
 
 add(Index, Filename) when is_list(Filename) ->
 	{ ok, Bin } = file:read_file(Filename),
@@ -33,7 +35,7 @@ tokenize(N, Tokens, W, [C|Letters]) ->
 		{ nil, true } -> 
 			tokenize(N+1, Tokens, nil, Letters);
 		{ {Q,Cs}, true } ->
-			tokenize(N+1, [{Q, list_to_atom(lists:reverse(Cs))}|Tokens], nil, Letters);
+			tokenize(N+1, [{Q, lists:reverse(Cs)}|Tokens], nil, Letters);
 		{ nil, false } ->
 			tokenize(N+1, Tokens, { N, [C] }, Letters);
 		{ {Q,Cs}, false } ->
@@ -46,12 +48,12 @@ index(Index,_Filename,_N, _L, []) ->
 index(Index,Filename,N,L,[{Q,W}|Tokens]) ->
 	case ets:lookup(Index,W) of
 		[] ->
-			ets:insert(Index,{W,[ { Filename, 1, 1/L,[Q] }]}),
+			ets:insert(Index,{W, 1, [ { Filename, 1, 1/L,[Q] }]}),
 			index(Index,Filename,N+1,L,Tokens);
-		[{W, [{Filename, Count, _Frequency, Offsets }|Rest]}] -> 
-			ets:insert(Index,{W, [{Filename, Count+1, (Count+1)/L, [Q|Offsets]}|Rest]}),
+		[{W, T, [{Filename, Count, _Frequency, Offsets }|Rest]}] -> 
+			ets:insert(Index,{W, T+1, [{Filename, Count+1, (Count+1)/L, [Q|Offsets]}|Rest]}),
 			index(Index,Filename,N+1,L,Tokens);
-		[{W, Rest}] ->
-			ets:insert(Index,{W, [{Filename, 1, 1/L, [Q]}|Rest]}),
+		[{W, T, Rest}] ->
+			ets:insert(Index,{W, T+1, [{Filename, 1, 1/L, [Q]}|Rest]}),
 			index(Index,Filename,N+1,L,Tokens)
 	end.
