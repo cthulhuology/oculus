@@ -1,20 +1,28 @@
 -module(index).
--export([ new/0, add/2, add/3, tokenize/1, tokenize/4, index/5]).
+-export([ new/0, get/2, add/2, add/3, tokenize/1, tokenize/4, index/5]).
+
 
 new() ->
 	ets:new(search_index, [set]).
+
+get(Index, Url) when is_list(Url) ->
+	{ok, "200", _Headers, Body } = ibrowse:send_req(Url,[],get),
+	add(Index, Url, Body).
 
 add(Index, Filename) when is_list(Filename) ->
 	{ ok, Bin } = file:read_file(Filename),
 	add(Index,Filename,Bin).
 
 add(Index, Filename, Bin ) when is_binary(Bin)  ->
-	{ ok, Tokens } = tokenize(Bin),
+	add(Index,Filename,binary:bin_to_list(Bin));
+
+add(Index, Filename, List ) when is_list(List) ->
+	{ ok, Tokens } = tokenize(List),
 	{ ok, Index2 } = index(Index,Filename,0,length(Tokens),Tokens),
 	Index2.
 	
-tokenize(Bin) ->
-	tokenize(0,[],nil, binary:bin_to_list(Bin)).
+tokenize(List) ->
+	tokenize(0,[],nil, List).
 
 tokenize(_N, Tokens, nil, [] ) ->
 	{ ok, Tokens };
