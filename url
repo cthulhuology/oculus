@@ -1,0 +1,2 @@
+curl 'http://dloh.org/list/index/published?startkey=%5b2009,1,1,0,0,0%5d&endkey=%5b2014,1,1,0,0,0%5d' > /tmp/posts
+
